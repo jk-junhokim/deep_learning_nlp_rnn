@@ -19,6 +19,20 @@ def preprocess(text):
 
     return corpus, word_to_id, id_to_word
 
+def cos_similarity(x, y, eps=1e-8):
+    '''
+    parameteres
+    x: vector
+    y: vector
+    eps: small value
+
+    return:
+    similarity
+    '''
+    nx = x / (np.sqrt(np.sum(x ** 2)) + eps)
+    ny = y / (np.sqrt(np.sum(y ** 2)) + eps)
+    return np.dot(nx, ny)
+
 def create_co_matrix(corpus, vocab_size, window_size=1):
     '''
     parameters
@@ -46,3 +60,41 @@ def create_co_matrix(corpus, vocab_size, window_size=1):
                 co_matrix[word_id, right_word_id] += 1
 
     return co_matrix
+
+def most_similar(query, word_to_id, id_to_word, word_matrix, top=5):
+    '''
+    parameters
+    query: search word
+    word_to_id: word to id
+    id_to_word: id to word
+    word_matrix: co-occurrence matrix
+    top: 5 (most similar)
+
+    returns:
+    top 5 most similar words
+    '''
+    if query not in word_to_id:
+        print('%s cannot find.' % query)
+        return
+
+    print('\n[query] ' + query)
+    query_id = word_to_id[query]
+    query_vec = word_matrix[query_id]
+
+    # calculate cosine similarity
+    vocab_size = len(id_to_word)
+
+    similarity = np.zeros(vocab_size)
+    for i in range(vocab_size):
+        similarity[i] = cos_similarity(word_matrix[i], query_vec)
+
+    # sort from min to max
+    count = 0
+    for i in (-1 * similarity).argsort():
+        if id_to_word[i] == query:
+            continue
+        print(' %s: %s' % (id_to_word[i], similarity[i]))
+
+        count += 1
+        if count >= top:
+            return
